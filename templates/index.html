@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather in Your City</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+        }
+        .search-box {
+            margin-top: 20px;
+        }
+        .weather-data {
+            margin-top: 20px;
+            display: none; 
+        }
+        .tabs {
+            margin-top: 20px;
+        }
+        .tabs button {
+            padding: 10px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .weather-content {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .weather-block {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 30%;
+        }
+        .history {
+            margin-top: 20px;
+        }
+        .history button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Погода в вашем городе ?</h1>
+        <div class="search-box">
+            <input type="text" id="city-input" placeholder="Введите название города" required>
+            <button onclick="getWeather()">Найти</button>
+        </div>
+        <div id="weather-data" class="weather-data">
+            <div class="tabs">
+                <button id="today-tab" onclick="showToday()">Сегодня</button>
+                <button id="tomorrow-tab" onclick="showTomorrow()">Завтра</button>
+            </div>
+            <div id="today-content" class="weather-content"></div>
+            <div id="tomorrow-content" class="weather-content" style="display: none;"></div>
+        </div>
+        <div id="search-history" class="history">
+            <h2 id="history-title">История поиска</h2>
+        </div>
+    </div>
+
+    <script>
+        let weatherData = [];
+        const HISTORY_KEY = 'weather_search_history';
+        
+        function loadSearchHistory() {
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+            if (history.length > 0) {
+                document.getElementById('history-title').style.display = 'block'; 
+                history.forEach(city => {
+                    createHistoryButton(city);
+                });
+            } else {
+                document.getElementById('history-title').style.display = 'none'; 
+            }
+        }
+        
+        function saveSearchHistory(city) {
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+            if (!history.includes(city)) {
+                history.push(city);
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+                createHistoryButton(city);
+                document.getElementById('history-title').style.display = 'block'; 
+            }
+        }
+        
+        function createHistoryButton(city) {
+            const historyDiv = document.getElementById('search-history');
+            const button = document.createElement('button');
+            button.textContent = city;
+            button.onclick = () => {
+                document.getElementById('city-input').value = city;
+                getWeather();
+            };
+            historyDiv.appendChild(button);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('ru-RU', options);
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getWeather() {
+            const city = document.getElementById('city-input').value;
+            if (!city) {
+                alert('Пожалуйста, введите название города.');
+                return;
+            }
+            fetch(`/weather?city=${city}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('weather-data').innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        weatherData = data.list;
+                        document.getElementById('today-tab').textContent = formatDate(weatherData[0].dt_txt);
+                        document.getElementById('tomorrow-tab').textContent = formatDate(new Date(new Date(weatherData[0].dt_txt).setDate(new Date(weatherData[0].dt_txt).getDate() + 1)));
+                        document.getElementById('weather-data').style.display = 'block';
+                        showToday();
+                        saveSearchHistory(city);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching weather data:', error);
+                });
+            document.querySelector('.container').style.justifyContent = 'flex-start';
+        }
+
+        function showToday() {
+            const todayContent = document.getElementById('today-content');
+            const tomorrowContent = document.getElementById('tomorrow-content');
+            todayContent.style.display = 'flex';
+            tomorrowContent.style.display = 'none';
+
+            const todayDate = new Date(weatherData[0].dt_txt).toDateString();
+            let weatherHTML = '';
+            weatherData.forEach(item => {
+                if (new Date(item.dt_txt).toDateString() === todayDate) {
+                    weatherHTML += `
+                        <div class="weather-block">
+                            <p>${formatTime(item.dt_txt)}</p>
+                            <p>Температура: ${Math.round(item.main.temp)}°C</p>
+                            <p>Ощущается как: ${Math.round(item.main.feels_like)}°C</p>
+                            <p>Погода: ${item.weather}</p>
+                            <p>Влажность: ${item.main.humidity}%</p>
+                            <p>Осадки ${item.rain || 0} мм</p>
+                            <p>Ветер: ${item.wind.speed} м/с (${item.wind.deg})</p>
+                            <p>Порывы: ${item.wind.gust} м/с</p>
+                        </div>
+                    `;
+                }
+            });
+            todayContent.innerHTML = weatherHTML;
+        }
+
+        function showTomorrow() {
+            const todayContent = document.getElementById('today-content');
+            const tomorrowContent = document.getElementById('tomorrow-content');
+            todayContent.style.display = 'none';
+            tomorrowContent.style.display = 'flex';
+
+            const todayDate = new Date(weatherData[0].dt_txt);
+            const tomorrowDate = new Date(todayDate);
+            tomorrowDate.setDate(todayDate.getDate() + 1);
+            let weatherHTML = '';
+            weatherData.forEach(item => {
+                if (new Date(item.dt_txt).toDateString() === tomorrowDate.toDateString()) {
+                    weatherHTML += `
+                        <div class="weather-block">
+                            <p>${formatTime(item.dt_txt)}</p>
+                            <p>Температура: ${Math.round(item.main.temp)}°C</p>
+                            <p>Ощущается как: ${Math.round(item.main.feels_like)}°C</p>
+                            <p>Погода: ${item.weather}</p>
+                            <p>Влажность: ${item.main.humidity}%</p>
+                            <p>Осадки ${item.rain || 0} мм</p>
+                            <p>Ветер: ${item.wind.speed} м/с (${item.wind.deg})</p>
+                            <p>Порывы: ${item.wind.gust} м/с</p>
+                        </div>
+                    `;
+                }
+            });
+            tomorrowContent.innerHTML = weatherHTML;
+        }
+        
+        window.onload = loadSearchHistory;
+    </script>
+</body>
+</html>
