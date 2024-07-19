@@ -58,7 +58,6 @@ def _get_weather_four_days(city_name):
 def _get_weather_four_days(id_city):
     """Получить погоду id города"""
     # Рекомендованный геосервисом способ
-
     params = {
         'id': id_city,
     }
@@ -70,7 +69,6 @@ def _get_weather_four_days(id_city):
 def _get_weather_four_days(args: Tuple[float, float]):
     """Получить погоду координатам города"""
     # Второй в приоритете использования
-
     params = {
         'lat': args[0],
         'lon': args[1],

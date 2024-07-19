@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import copy
-
 from django.db.models import F
-
 from weather.models import City, CitiesStatistics
 
 

@@ -12,4 +12,4 @@ RUN python manage.py migrate
 
 EXPOSE 8000
 
-CMD ["gunicorn", "conf.wsgi:application", "--bind", "127.0.0.1:8000"]
+CMD ["gunicorn", "conf.wsgi:application", "--bind", "0.0.0.0:8000"]
