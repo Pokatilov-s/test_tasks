@@ -21,10 +21,12 @@ Stack:
 
 ## Установка
 
-1. Клонируйте репозиторий:
+1. Клонируйте репозиторий и перейдите в папку проекта:
 
     ```sh
     git clone https://github.com/Pokatilov-s/weather_forecast.git
+    ```
+    ```sh
     cd weather_forecast
     ```
 
@@ -32,6 +34,8 @@ Stack:
 
     ```sh
     python3 -m venv venv
+    ```
+    ```sh
     source venv/bin/activate  # На Windows используйте `venv\Scripts\activate`
     ```
 
