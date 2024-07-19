@@ -6,7 +6,7 @@ SECRET_KEY = 'django-insecure-8vl-5=krzgg)k#=&c=d8vmc!vqbgp^)c4%q70!kr16fk33^d6h
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -88,6 +88,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
-        # 'rest_framework.renderers.BrowsableAPIRenderer',
     )
 }

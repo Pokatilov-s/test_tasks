@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import copy
 
+from django.db.models import F
+
 from weather.models import City, CitiesStatistics
 
 
@@ -56,17 +58,18 @@ def add_city(name, city_id, lat, lon):
 
 def check_city(city):
     """Проверить наличие геоданных города """
-    city = City.objects.filter(name=city).values('city_id', 'lat', 'lon').first()
+    city_geo_data = City.objects.filter(name=city).values('city_id', 'lat', 'lon').first()
 
-    if city is not None:
-
-        if city['city_id'] is not None:
-            return city['city_id']
+    if city_geo_data is not None:
+        update_statistics(city)
+        if city_geo_data['city_id'] is not None:
+            return city_geo_data['city_id']
         else:
-            return city['lat'], city['lon']
+            return city_geo_data['lat'], city_geo_data['lon']
 
     return None
 
 
 def update_statistics(city):
-    pass
+    """Обновить запросов статистику по городу"""
+    CitiesStatistics.objects.filter(name=city).update(count_requests=F('count_requests') + 1)
