@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
 import copy
 
+from weather.models import City, CitiesStatistics
 
-def get_wind_direction(degree):
+
+def _get_wind_direction(degree):
+    """Определить направление ветра"""
     directions = ('Северный', 'Северо-Восточный', 'Восточный', 'Юго-Восточный', 'Южный', 'Юго-Западный',
                   'Западный', 'Северо-Западный',)
     idx = round(degree / 45) % 8
@@ -10,11 +13,8 @@ def get_wind_direction(degree):
 
 
 def format_response(data_jason):
+    """Форматировать ответ от геосервиса"""
     data_jason_copy = copy.deepcopy(data_jason)
-
-    del data_jason_copy['cod']
-    del data_jason_copy['message']
-    del data_jason_copy['cnt']
 
     today = datetime.strptime(data_jason_copy['list'][0]['dt_txt'].split(' ')[0], '%Y-%m-%d').date()
     tomorrow = today + timedelta(days=1)
@@ -24,22 +24,49 @@ def format_response(data_jason):
         data_jason_copy['list']))
 
     data_jason_copy['list'] = new_list
+
+    data_jason_copy['message'] = 'success'
+    del data_jason_copy['cnt']
+
     for obj in data_jason_copy['list']:
 
-        del obj['dt']
-
-        delite_key = ("temp_min", "temp_max", "sea_level", "grnd_level", "temp_kf", "pressure")
-        obj['main'] = {k: v for k, v in obj['main'].items() if k not in delite_key}
+        del_key_main = ("temp_min", "temp_max", "sea_level", "grnd_level", "temp_kf", "pressure")
+        obj['main'] = {k: v for k, v in obj['main'].items() if k not in del_key_main}
 
         obj['weather'] = obj.get('weather', [{}])[0].get('description')
 
         obj['clouds'] = obj.get('clouds', {}).get('all')
 
-        obj['wind']['deg'] = get_wind_direction(obj.get('wind', {}).get('deg'))
+        obj['wind']['deg'] = _get_wind_direction(obj.get('wind', {}).get('deg'))
 
         obj['rain'] = obj.get('rain', {}).get('3h')
 
+        del obj['dt']
         del obj['pop']
         del obj['sys']
 
     return data_jason_copy
+
+
+def add_city(name, city_id, lat, lon):
+    """Добавить геоданные города"""
+    if not City.objects.filter(name=name).exists():
+        City.objects.create(name=name, city_id=city_id, lat=lat, lon=lon)
+
+
+def check_city(city):
+    """Проверить наличие геоданных города """
+    city = City.objects.filter(name=city).values('city_id', 'lat', 'lon').first()
+
+    if city is not None:
+
+        if city['city_id'] is not None:
+            return city['city_id']
+        else:
+            return city['lat'], city['lon']
+
+    return None
+
+
+def update_statistics(city):
+    pass
